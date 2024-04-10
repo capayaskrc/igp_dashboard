@@ -12,19 +12,26 @@
                 @php
                     $user = auth()->user();
                 @endphp
-                <!-- Navigation Links -->
+
+                    <!-- Navigation Links -->
                 <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                    @if($user['role'] == 'admin')
-                        <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
-                            {{ __('Admin Dashboard') }}
-                        </x-nav-link>
-                    @elseif($user['role'] == 'manager')
-                        <x-nav-link :href="route('manager.dashboard')" :active="request()->routeIs('manager.dashboard')">
-                            {{ __('Manager Dashboard') }}
-                        </x-nav-link>
-                    @elseif($user['role'] == 'owner')
-                        <x-nav-link :href="route('owner.dashboard')" :active="request()->routeIs('owner.dashboard')">
-                            {{ __('Owner Dashboard') }}
+                    @if($user)
+                        @if($user['role'] == 'admin')
+                            <x-nav-link :href="route('admin.dashboard')" :active="request()->routeIs('admin.dashboard')">
+                                {{ __('Admin Dashboard') }}
+                            </x-nav-link>
+                        @elseif($user['role'] == 'manager')
+                            <x-nav-link :href="route('manager.dashboard')" :active="request()->routeIs('manager.dashboard')">
+                                {{ __('Manager Dashboard') }}
+                            </x-nav-link>
+                        @elseif($user['role'] == 'owner')
+                            <x-nav-link :href="route('owner.dashboard')" :active="request()->routeIs('owner.dashboard')">
+                                {{ __('Owner Dashboard') }}
+                            </x-nav-link>
+                        @endif
+                    @else
+                        <x-nav-link :href="route('login')" :active="request()->routeIs('login')">
+                            {{ __('Login') }}
                         </x-nav-link>
                     @endif
                 </div>
