@@ -20,6 +20,11 @@ Route::put('/admin/users/{user}/toggle-status', [AdminController::class, 'toggle
 
 Route::get('/manager/dashboard', [DashboardController::class, 'manager'])->name('manager.dashboard');
 Route::get('/manager/owner_manage', [ManagerController::class, 'index'])->name('owner.manage');
+Route::get('/manager/rental_manage', [ManagerController::class, 'rental'])->name('rental.manage');
+Route::put('/manager/{user}/toggle-status', [ManagerController::class, 'toggleStatus'])->name('owner.status');
+Route::post('/manager/owner-update/{id}', [ManagerController::class, 'update'])->name('owners.update');
+
+
 Route::get('/owner/dashboard', [DashboardController::class, 'owner'])->name('owner.dashboard');
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
