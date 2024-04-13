@@ -15,11 +15,11 @@ class DashboardController extends Controller
 
     public function manager()
     {
-        return view('dashboard');
+        return view('manager.manager_dashboard');
     }
 
     public function owner()
     {
-        return view('dashboard');
+        return view('owner.owner_dashboard');
     }
 }
