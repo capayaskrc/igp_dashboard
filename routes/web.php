@@ -12,26 +12,26 @@ Route::get('/', function () {
     return view('auth.login');
 });
 
-//Route::get('/dashboard', function () {
-//    $user = Auth::user(); // Get the authenticated user
-//
-//    // Ensure the user is not null
-//    if (!$user) {
-//        return abort(403, 'No authenticated user.');
-//    }
-//
-//    // Check user role and return appropriate view
-//    switch ($user->role) {
-//        case 'admin':
-//            return view('admin.admin_dashboard');
-//        case 'manager':
-//            return view('manager.manager_dashboard');
-//        case 'owner':
-//            return view('owner.owner_dashboard');
-//        default:
-//            return abort(403, 'Unauthorized access'); // Or handle another way
-//    }
-//})->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/dashboard', function () {
+    $user = Auth::user(); // Get the authenticated user
+
+    // Ensure the user is not null
+    if (!$user) {
+        return abort(403, 'No authenticated user.');
+    }
+
+    // Check user role and return appropriate view
+    switch ($user->role) {
+        case 'admin':
+            return view('admin.admin_dashboard');
+        case 'manager':
+            return view('manager.manager_dashboard');
+        case 'owner':
+            return view('owner.owner_dashboard');
+        default:
+            return abort(403, 'Unauthorized access'); // Or handle another way
+    }
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::get('/admin/dashboard', [DashboardController::class, 'admin'])->name('admin.dashboard');
 Route::get('/admin/user_manage', [AdminController::class, 'index'])->name('user.manage');
