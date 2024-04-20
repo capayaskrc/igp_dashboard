@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Rental;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class ManagerController extends Controller
 {
@@ -27,25 +28,17 @@ class ManagerController extends Controller
 
     public function store(Request $request)
     {
-        // Validate the form data
-        $validatedData = $request->validate([
-            'owner_id' => 'required|exists:users,id',
-            'start_date' => 'required|date',
-            'due_date' => 'required|date|after:start_date',
-            'rent_price' => 'required|numeric|min:0',
-        ]);
+//        dd($request);
+            // Create a new rental instance
+            $rental = new Rental();
+            $rental->owner_id = $request->owner_id;
+            $rental->start_date = $request->start_date;
+            $rental->due_date = $request->end_date;
+            $rental->rent_price = $request->rent_price;
+            $rental->save();
 
-        // Create a new Rental instance
-        $rental = new Rental();
-
-        $rental->owner_id = $validatedData['owner_id'];
-        $rental->start_date = $validatedData['start_date'];
-        $rental->due_date = $validatedData['due_date'];
-        $rental->rent_price = $validatedData['rent_price'];
-        $rental->save();
-        dd($rental);
-        // Redirect the user to a confirmation page or elsewhere
-//        return response()->json(['success' => true, 'message' => 'Rental added successfully']);
+            // Return success response
+        return redirect()->back()->with('success', 'Rental added successfully');
     }
 
     public function toggleStatus(Request $request, User $user)
@@ -76,4 +69,43 @@ class ManagerController extends Controller
         // Redirect back with a success message
         return redirect()->back()->with('success', 'Owner details updated successfully');
     }
+
+    public function statistical()
+    {
+        // Get the count of rentals that are paid
+        $paidCount = Rental::where('paid_for_this_month', true)->count();
+
+        // Get the total rent price of all paid rentals
+        $totalIncome = Rental::where('paid_for_this_month', true)->sum('rent_price');
+
+        // Get the number of unique owners who have paid
+        $uniqueOwnersPaidCount = Rental::where('paid_for_this_month', true)->distinct('owner_id')->count('owner_id');
+
+        // Get the count of rentals that are unpaid
+        $unpaidCount = Rental::where('paid_for_this_month', false)->count();
+
+        // Get the total potential income from unpaid rentals
+        $potentialIncome = Rental::where('paid_for_this_month', false)->sum('rent_price');
+
+        $monthlyIncomeData = Rental::where('paid_for_this_month', true)
+            ->whereYear('start_date', Carbon::now()->year)
+            ->get()
+            ->groupBy(function($date) {
+                return Carbon::parse($date->start_date)->format('F');
+            })
+            ->map(function($month) {
+                return $month->sum('rent_price');
+            });
+
+        // Return the statistical data to the view
+        return view('manager.statistical_manage', [
+            'paidCount' => $paidCount,
+            'totalIncome' => $totalIncome,
+            'uniqueOwnersPaidCount' => $uniqueOwnersPaidCount,
+            'unpaidCount' => $unpaidCount,
+            'potentialIncome' => $potentialIncome,
+            'monthlyIncomeData' => $monthlyIncomeData
+        ]);
+    }
+
 }

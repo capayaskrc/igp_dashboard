@@ -28,17 +28,26 @@
                 @forelse ($rentals as $rental)
                     <tr>
                         <td class="px-4 py-2 ">{{ $rental->owner->name }}</td>
-                        <td class="px-4 py-2 ">${{ number_format($rental->rent_price, 2) }}</td>
+                        <td class="px-4 py-2 ">₱{{ number_format($rental->rent_price, 2) }}</td>
                         <td class="px-4 py-2 ">{{ $rental->start_date->format('Y-m-d') }}</td>
                         <td class="px-4 py-2 ">{{ $rental->due_date->format('Y-m-d') }}</td>
                         <td class="px-4 py-2 ">{{ $rental->paid_for_this_month ? 'Yes' : 'No' }}</td>
                         <td class="px-4 py-2 ">
-                            <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" data-toggle="modal" data-target="#editRentalModal{{ $rental->id }}">Edit</button>
-                            <button
-                                class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
-                                onclick="deleteRental({{ $rental->id }})">
-                                Delete
-                            </button>
+                            <!-- Dropdown for managing rental -->
+                            <div class="dropdown">
+                                <button class="btn btn-secondary dropdown-toggle" type="button" id="manageDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Manage Rental
+                                </button>
+                                <div class="dropdown-menu" aria-labelledby="manageDropdown">
+                                    <button type="button" class="btn btn-primary dropdown-item" onclick="manageRental()">Manage</button>
+                                    <button type="button" class="btn btn-primary dropdown-item" onclick="confirmMarkAsPaid({{ $rental->id }})">Mark as Paid<</button>
+                                    <button
+                                        class="btn btn-primary dropdown-item"
+                                        onclick="deleteRental({{ $rental->id }})">
+                                        Delete
+                                    </button>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 @empty
@@ -94,16 +103,39 @@
                             <input type="text" class="form-control" id="rent_price" name="rent_price">
                         </div>
                         <!-- Submit button -->
-                        <button type="submit" class="btn btn-primary">Submit</button>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                            <button type="submit" class="btn btn-primary">Submit</button>
+                        </div>
                     </form>
-                </div>
-
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary">Save changes</button>
                 </div>
             </div>
         </div>
     </div>
 
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById("start_date").setAttribute('min', today);
+            document.getElementById("end_date").setAttribute('min', today);
+        });
+
+        function confirmMarkAsPaid(userId) {
+            if (confirm("Are you sure you want to mark this rental as paid?")) {
+                // Send a POST request using Axios
+                axios.post("/manager/rentals/" + userId + "/mark-as-paid")
+                    .then(function (response) {
+                        console.log(response.data);
+                        alert("Rental marked as paid.");
+                        location.reload();
+                    })
+                    .catch(function (error) {
+                        // Handle error response
+                        console.error(error);
+                        alert("An error occurred while marking the rental as paid.");
+                    });
+            } else {
+            }
+        }
+    </script>
 </x-app-layout>

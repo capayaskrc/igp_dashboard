@@ -3,6 +3,7 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ManagerController;
+use App\Http\Controllers\OwnerController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\RentalController;
 use Illuminate\Support\Facades\Auth;
@@ -43,9 +44,17 @@ Route::get('/manager/rental_manage', [ManagerController::class, 'rental'])->name
 Route::post('/manager/rentals', [ManagerController::class, 'store'])->name('rentals.store');
 Route::put('/manager/{user}/toggle-status', [ManagerController::class, 'toggleStatus'])->name('owner.status');
 Route::post('/manager/owner-update/{id}', [ManagerController::class, 'update'])->name('owners.update');
+Route::get('/manager/manage-stat', [ManagerController::class, 'statistical'])->name('stat.manage');
 Route::get('/manager/manage/rentals', [RentalController::class, 'index'])->name('rentals.view');
+Route::post('/manager/rentals/{id}/mark-as-paid', [RentalController::class, 'markAsPaid'])->name('rentals.paid');
+
 
 Route::get('/owner/dashboard', [DashboardController::class, 'owner'])->name('owner.dashboard');
+Route::get('/owner/dashboard/casher', [OwnerController::class, 'casher'])->name('owner.casher_dashboard');
+Route::get('/owner/dashboard/inventory', [OwnerController::class, 'inventory'])->name('inventory.view');
+Route::post('/owner/dashboard/inventory/create', [OwnerController::class, 'create'])->name('inventory.create');
+Route::get('/owner/manage/statistical', [DashboardController::class, 'owner'])->name('owner.dashboard');
+
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');

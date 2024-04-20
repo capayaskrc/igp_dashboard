@@ -9,15 +9,25 @@ class Inventory extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'description', 'user_id'];
+    protected $fillable = [
+        'user_id',
+        'name',
+        'description',
+        'category',
+        'price',
+        'initial_quantity',
+        'current_quantity'
+    ];
 
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
-    public function products()
+    // You can also define any additional methods or functionality here
+    // For example, a method to check stock status
+    public function isLowStock()
     {
-        return $this->hasMany(Products::class);
+        return $this->current_quantity <= 10; // Assuming low stock is defined as 10 or fewer items
     }
 }
