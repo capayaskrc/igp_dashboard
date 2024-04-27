@@ -4,16 +4,55 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inventory;
+use App\Models\Sale;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 
 class OwnerController extends Controller
 {
     //
-    function casher()
+    public function casher()
     {
-        return view('owner.casher_dashboard');
+        // Get the authenticated user's ID
+        $userId = Auth::id();
+
+        // Fetch all products belonging to the user and group them by category
+        $productsByCategory = Inventory::where('user_id', $userId)
+            ->orderBy('category')
+            ->get()
+            ->groupBy('category');
+
+        // Pass the grouped products to the view
+        return view('owner.casher_dashboard', ['productsByCategory' => $productsByCategory]);
     }
+    public function saveSalesData(Request $request)
+    {
+        $salesData = $request->input('salesData');
+
+        foreach ($salesData as $saleItem) {
+            // Find the product by name
+            $product = Inventory::where('name', $saleItem['productName'])->first();
+
+            // If the product exists, proceed to save the sale
+            if ($product) {
+                $sale = new Sale();
+                $sale->user_id = auth()->id(); // Assuming you're using authentication
+                $sale->product_id = $product->id; // Get the product ID from the inventory
+                $sale->quantity_sold = $saleItem['quantitySold'];
+                $sale->total_amount = $saleItem['totalAmount'];
+                $sale->save();
+
+                // Update current quantity of the product
+                $product->current_quantity -= $saleItem['quantitySold'];
+                $product->save();
+            }
+        }
+        return response()->json(['message' => 'Sales data saved successfully']);
+    }
+
 
     public function inventory()
     {
@@ -110,6 +149,147 @@ class OwnerController extends Controller
 
         // Redirect back with success message
         return redirect()->back()->with('success', 'Stock removed successfully.');
+    }
+
+    public function incomeView(Request $request)
+    {
+        $date = $request->input('date', now()->format('Y-m-d')); // Default to today if no date is provided
+        $endDate = $request->input('endDate', $date); // Allows for fetching ranges, defaults to the same as start date
+
+        $sales = Sale::whereBetween('created_at', [$date . ' 00:00:00', $endDate . ' 23:59:59'])
+            ->with('product') // Assuming you have a relationship setup
+            ->get();
+
+        $totalIncome = $sales->sum('total_amount');
+
+        return view('owner.income_dashboard', compact('sales', 'totalIncome', 'date', 'endDate'));
+    }
+
+    public function generatePDF(Request $request)
+    {
+        $startDate = $request->input('startDate');
+        $endDate = $request->input('endDate');
+
+        // Ensure the date format is correct and adjust for start and end of day
+        $startDate = Carbon::parse($startDate)->startOfDay();
+        $endDate = Carbon::parse($endDate)->endOfDay();
+
+        // Fetch sales data within the specified date range for the authenticated user
+        $sales = Sale::where('user_id', auth()->id())
+            ->whereBetween('created_at', [$startDate, $endDate])
+            ->get();
+
+        // Calculate total amount for the given date range
+        $totalAmount = $sales->sum('total_amount');
+
+        // Load the view with sales data, start and end date, and total amount
+        $pdf = PDF::loadView('pdf.report', compact('sales', 'startDate', 'endDate', 'totalAmount'));
+
+        // Download the PDF with a meaningful filename
+        return $pdf->download('sales-report-' . $startDate->format('Y-m-d') . '-to-' . $endDate->format('Y-m-d') . '.pdf');
+    }
+
+    public function ownerStat()
+    {
+        $userId = auth()->id(); // Assuming you're using authentication
+
+        // Get daily income
+        $dailyIncome = Sale::where('user_id', $userId)
+            ->whereDate('created_at', today())
+            ->sum('total_amount');
+
+        // Get monthly income
+        $monthlyIncome = Sale::where('user_id', $userId)
+            ->whereYear('created_at', now()->year)
+            ->whereMonth('created_at', now()->month)
+            ->sum('total_amount');
+
+        // Get yearly income
+        $yearlyIncome = Sale::where('user_id', $userId)
+            ->whereYear('created_at', now()->year)
+            ->sum('total_amount');
+
+        // Get weekly income for the past 4 weeks
+        $weeklyIncomePast4Weeks = Sale::where('user_id', $userId)
+            ->whereDate('created_at', '>=', now()->subWeeks(4))
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy(function ($date) {
+                return Carbon::parse($date->created_at)->weekOfYear;
+            })
+            ->map(function ($weeklyIncome) {
+                return $weeklyIncome->sum('total_amount');
+            });
+
+        // Check if the current week is greater than 4
+        $currentWeek = Carbon::now()->weekOfYear;
+
+// Get weekly income for the past 4 weeks
+        $weeklyIncomePast4Weeks = Sale::where('user_id', $userId)
+            ->whereDate('created_at', '>=', now()->subWeeks(4))
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy(function($date) use ($currentWeek) {
+                return Carbon::parse($date->created_at)->weekOfYear - ($currentWeek - 4);
+            })
+            ->map(function($weeklyIncome) {
+                return $weeklyIncome->sum('total_amount');
+            });
+
+// Fill in missing weeks with zero values and format keys as "Week X"
+        $WeeklyIncomePast4Weeks = [];
+        for ($weekNumber = 1; $weekNumber <= 4; $weekNumber++) {
+            $weekLabel = "Week $weekNumber";
+            if (isset($weeklyIncomePast4Weeks[$weekNumber])) {
+                $WeeklyIncomePast4Weeks[$weekLabel] = $weeklyIncomePast4Weeks[$weekNumber];
+            } else {
+                $WeeklyIncomePast4Weeks[$weekLabel] = 0;
+            }
+        }
+
+        // Get monthly income for the past 3 months (quarterly)
+        $monthlyIncomePast3Months = Sale::where('user_id', $userId)
+            ->whereDate('created_at', '>=', now()->subMonths(3))
+            ->orderBy('created_at')
+            ->get()
+            ->groupBy(function ($date) {
+                return Carbon::parse($date->created_at)->format('F');
+            })
+            ->map(function ($monthlyIncome) {
+                return $monthlyIncome->sum('total_amount');
+            });
+
+        // Get the current year
+        $currentYear = date('Y');
+        $yearlyIncomeData = [];
+
+        for ($year = $currentYear - 2; $year <= $currentYear; $year++) {
+            // Get yearly income for the current year
+            $yearlyIncome = Sale::where('user_id', $userId)
+                ->whereYear('created_at', $year)
+                ->sum('total_amount');
+
+            // Store the yearly income for the current year in the array
+            $yearlyIncomeData[$year] = $yearlyIncome;
+        }
+        // Get popular food items
+        $popularFoods = DB::table('sales')
+            ->join('inventories', 'sales.product_id', '=', 'inventories.id')
+            ->where('sales.user_id', $userId)
+            ->select('inventories.name', DB::raw('SUM(sales.quantity_sold) as total_quantity'))
+            ->groupBy('inventories.name')
+            ->orderByDesc('total_quantity')
+            ->limit(5) // Limit to top 5 popular food items
+            ->get();
+        return view('owner.statistical_dashboard', compact(
+            'dailyIncome',
+            'monthlyIncome',
+            'yearlyIncome',
+            'WeeklyIncomePast4Weeks',
+            'monthlyIncomePast3Months',
+            'yearlyIncomeData',
+            'popularFoods'
+        ));
     }
 
 }

@@ -44,10 +44,6 @@ class RegisteredUserController extends Controller
             'active' => '1',
         ]);
 
-        event(new Registered($user));
-
-        Auth::login($user);
-
-        return redirect(route('dashboard', absolute: false));
+        return redirect()->back()->with('success', 'Inventory item added successfully!');
     }
 }

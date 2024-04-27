@@ -19,16 +19,16 @@
                     </div>
                 </div>
 
-                <div class="md:w-1/2 mt-4 md:mt-0">
-                    <div class="bg-white rounded-lg shadow-md">
-                        <div class="p-4">
-                            <h5 class="text-xl font-semibold mb-2">Activity Log</h5>
-                            <hr class="my-2">
-                            <p class="text-sm text-gray-700">View and manage activity logs.</p>
-                            <a href="activity_log.php" class="inline-block mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Go to Activity Log</a>
-                        </div>
-                    </div>
-                </div>
+{{--                <div class="md:w-1/2 mt-4 md:mt-0">--}}
+{{--                    <div class="bg-white rounded-lg shadow-md">--}}
+{{--                        <div class="p-4">--}}
+{{--                            <h5 class="text-xl font-semibold mb-2">Activity Log</h5>--}}
+{{--                            <hr class="my-2">--}}
+{{--                            <p class="text-sm text-gray-700">View and manage activity logs.</p>--}}
+{{--                            <a href="activity_log.php" class="inline-block mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Go to Activity Log</a>--}}
+{{--                        </div>--}}
+{{--                    </div>--}}
+{{--                </div>--}}
             </div>
         </div>
     </div>

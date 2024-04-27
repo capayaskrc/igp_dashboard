@@ -56,6 +56,11 @@ Route::post('/manager/rentals/{id}/mark-as-paid', [RentalController::class, 'mar
 
 Route::get('/owner/dashboard', [DashboardController::class, 'owner'])->name('owner.dashboard');
 Route::get('/owner/dashboard/casher', [OwnerController::class, 'casher'])->name('owner.casher_dashboard');
+Route::get('/owner/dashboard/statistics', [OwnerController::class, 'ownerStat'])->name('ownerStat.manage');
+Route::post('/owner/dashboard/save-sales-data', [OwnerController::class, 'saveSalesData'])->name('save.sales.data');
+Route::get('/owner/dashboard/income', [OwnerController::class, 'incomeView'])->name('income.manage');
+Route::get('/owner/dashboard/generate-pdf', [OwnerController::class, 'generatePDF'])->name('generate.pdf');
+Route::post('/owner/dashboard/income-get', [OwnerController::class, 'fetchSales'])->name('income.get');
 Route::get('/owner/dashboard/inventory', [OwnerController::class, 'inventory'])->name('inventory.view');
 Route::post('/owner/dashboard/inventory/create', [OwnerController::class, 'create'])->name('inventory.create');
 Route::post('/owner/dashboard/inventory/restock', [OwnerController::class, 'restock'])->name('inventory.restock');
