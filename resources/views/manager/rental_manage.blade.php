@@ -7,7 +7,6 @@
 
     <div class="container mx-auto p-8">
         <div class="mb-4 flex justify-between items-center">
-            <!-- Button to trigger modal -->
             <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded" data-toggle="modal" data-target="#addRentalModal">
                 Add Rental
             </button>
@@ -69,6 +68,10 @@
                 </tbody>
             </table>
         </div>
+        <div class="mb-5">
+            <div id="calendar" class="mx-auto" style="max-width: 800px;"></div>
+        </div>
+
     </div>
 
 
@@ -259,5 +262,46 @@
                     });
             }
         }
+        {{--document.addEventListener('DOMContentLoaded', function() {--}}
+        {{--    const calendarEl = document.getElementById('calendar');--}}
+        {{--    const calendar = new Calendar(calendarEl, {--}}
+        {{--        plugins: ['dayGrid'],--}}
+        {{--        events: [--}}
+        {{--                @foreach($rentals as $rental)--}}
+        {{--            {--}}
+        {{--                title: '{{ $rental->name }}',--}}
+        {{--                start: '{{ $rental->start_date }}',--}}
+        {{--                end: '{{ $rental->due_date }}',--}}
+        {{--            },--}}
+        {{--            @endforeach--}}
+        {{--        ]--}}
+        {{--    });--}}
+        {{--    calendar.render();--}}
+        {{--});--}}
+        let calendar;
+        document.addEventListener('DOMContentLoaded', function() {
+            const rentals = [
+                    @foreach($rentals as $rental)
+                {
+                    title: '{{ $rental->id }}',
+                    start: '{{ $rental->start_date }}',
+                    end: '{{ $rental->due_date }}',
+                },
+                @endforeach
+            ];
+
+            const calendarEl = document.getElementById('calendar');
+            calendar = new FullCalendar.Calendar(calendarEl, {
+                plugins: ['dayGrid'],
+                eventSources: [{
+                    events: rentals
+                }]
+            });
+
+            console.log('Events:', calendar.getEvents()); // Log events
+            calendar.render();
+            var vw = calendar.view;
+        });
+
     </script>
 </x-app-layout>
