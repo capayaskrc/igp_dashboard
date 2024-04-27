@@ -15,6 +15,7 @@ class Rental extends Model
     protected $fillable = [
         'owner_id',
         'rent_price',
+        'category_id',
         'start_date',
         'due_date',
         'paid_for_this_month'
@@ -51,5 +52,10 @@ class Rental extends Model
     public function isOverdue()
     {
         return $this->due_date->isPast() && !$this->paid_for_this_month;
+    }
+
+    public function category()
+    {
+        return $this->belongsTo(Category::class, 'category_id');
     }
 }

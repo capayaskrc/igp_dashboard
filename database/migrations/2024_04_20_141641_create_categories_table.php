@@ -9,16 +9,12 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
+    public function up()
     {
-        Schema::create('rentals', function (Blueprint $table) {
+        Schema::create('categories', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('owner_id')->constrained('users');
             $table->string('name');
-            $table->decimal('rent_price', 8, 2);
-            $table->date('start_date');
-            $table->date('due_date');
-            $table->boolean('paid_for_this_month')->default(false);
+            $table->string('rent_name');
             $table->timestamps();
         });
     }
@@ -28,6 +24,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('rentals');
+        Schema::dropIfExists('categories');
     }
 };

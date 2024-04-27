@@ -42,9 +42,14 @@ Route::get('/manager/dashboard', [DashboardController::class, 'manager'])->name(
 Route::get('/manager/owner_manage', [ManagerController::class, 'index'])->name('owner.manage');
 Route::get('/manager/rental_manage', [ManagerController::class, 'rental'])->name('rental.manage');
 Route::post('/manager/rentals', [ManagerController::class, 'store'])->name('rentals.store');
+Route::delete('/manager/rental/delete/{id}', [ManagerController::class, 'delete'])->name('rentals.delete');
+Route::post('/manager/rental/generate-report', [ManagerController::class, 'generatePDF'])->name('rental.report');
+Route::get('/manager/manage/category', [ManagerController::class, 'category'])->name('category.manage');
+Route::post('/manager/manage/category/store', [ManagerController::class, 'categoryStore'])->name('category.store');
 Route::put('/manager/{user}/toggle-status', [ManagerController::class, 'toggleStatus'])->name('owner.status');
 Route::post('/manager/owner-update/{id}', [ManagerController::class, 'update'])->name('owners.update');
 Route::get('/manager/manage-stat', [ManagerController::class, 'statistical'])->name('stat.manage');
+Route::get('/manager/manage-stat/owner', [ManagerController::class, 'ownerStat'])->name('stat.owner');
 Route::get('/manager/manage/rentals', [RentalController::class, 'index'])->name('rentals.view');
 Route::post('/manager/rentals/{id}/mark-as-paid', [RentalController::class, 'markAsPaid'])->name('rentals.paid');
 
@@ -53,6 +58,8 @@ Route::get('/owner/dashboard', [DashboardController::class, 'owner'])->name('own
 Route::get('/owner/dashboard/casher', [OwnerController::class, 'casher'])->name('owner.casher_dashboard');
 Route::get('/owner/dashboard/inventory', [OwnerController::class, 'inventory'])->name('inventory.view');
 Route::post('/owner/dashboard/inventory/create', [OwnerController::class, 'create'])->name('inventory.create');
+Route::post('/owner/dashboard/inventory/restock', [OwnerController::class, 'restock'])->name('inventory.restock');
+Route::post('/owner/dashboard/inventory/{id}/remove', [OwnerController::class, 'removeStock'])->name('inventory.remove');
 Route::get('/owner/manage/statistical', [DashboardController::class, 'owner'])->name('owner.dashboard');
 
 Route::middleware('auth')->group(function () {

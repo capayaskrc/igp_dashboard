@@ -6,6 +6,9 @@
     </x-slot>
 
     <div class="container mt-4">
+        <button id="generateReportBtn" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mb-4">
+            Generate Report
+        </button>
         <div class="row">
             <div class="col-md-3 mb-4">
                 <div class="card">
@@ -83,6 +86,19 @@
                     }]
                 }
             }
+        });
+
+        document.getElementById('generateReportBtn').addEventListener('click', function() {
+            // Make a POST request to the Laravel route
+            axios.post('{{ route("rental.report") }}')
+                .then(function(response) {
+                    // Handle the success response, e.g., display a success message
+                    alert('PDF report generated successfully!');
+                })
+                .catch(function(error) {
+                    // Handle errors, e.g., display an error message
+                    alert('Error generating PDF report: ' + error.message);
+                });
         });
     </script>
 </x-app-layout>

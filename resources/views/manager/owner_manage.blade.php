@@ -6,6 +6,9 @@
     </x-slot>
 
     <div class="container mx-auto p-8">
+        <div class="mb-4">
+            <a href="{{ route('register') }}" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">Register</a>
+        </div>
         <div class="mb-4 flex justify-between items-center">
             <table class="w-full text-xs text-left text-black overflow-x-auto shadow-lg">
                 <thead class="text-xs text-black-700 uppercase border">
