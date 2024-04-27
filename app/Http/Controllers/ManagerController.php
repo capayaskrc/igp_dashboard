@@ -5,9 +5,12 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Category;
 use App\Models\Rental;
+use App\Models\Sale;
 use App\Models\User;
+use Dompdf\Dompdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\View;
 use Spatie\LaravelPdf\Facades\Pdf;
@@ -214,24 +217,260 @@ class ManagerController extends Controller
 
     public function generatePDF()
     {
-        // Render the Blade view to HTML
-        $data = [
-            'title' => 'Sample PDF Report',
-            'content' => 'This is a sample PDF report generated using Laravel and spatie/laravel-pdf.'
-        ];
-        $filename = 'report_' . time() . '.pdf';
-        $directory = storage_path('app/public/pdf/');
-        Pdf::view('pdf.report', ['data' => $data])
-            ->save('C:/htdocs/igp-dashboard/storage/pdf/invoice.pdf');
+        // Get the current month and year
+        $currentMonth = now()->month;
+        $currentYear = now()->year;
 
+        // Fetch all rentals for the current month with owner names and rental names
+        $rentals = Rental::select('rentals.*', 'users.name as owner_name', 'categories.rent_name as rental_name')
+            ->leftJoin('users', 'rentals.owner_id', '=', 'users.id')
+            ->leftJoin('categories', 'rentals.category_id', '=', 'categories.id')
+            ->whereMonth('rentals.created_at', $currentMonth)
+            ->whereYear('rentals.created_at', $currentYear)
+            ->get();
 
-        return 'PDF report saved successfully!';
+        // Separate paid and unpaid rentals
+        $paidRentals = $rentals->where('paid_for_this_month', true);
+        $unpaidRentals = $rentals->where('paid_for_this_month', false);
+
+        // Calculate total income from paid rentals
+        $totalIncomePaid = $paidRentals->sum('rent_price');
+
+        // Calculate total potential income from unpaid rentals
+        $totalPotentialIncomeUnpaid = $unpaidRentals->sum('rent_price');
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.rental_report', compact('paidRentals', 'unpaidRentals', 'totalIncomePaid', 'totalPotentialIncomeUnpaid'));
+
+        return $pdf->download('rental_report_-' . now()->format('F_Y') . '.pdf');
     }
 
-    public function ownerStat()
+
+
+
+    public function ownerStat($userId)
     {
-        return view('manager.ownerStat_manage');
+        // Find users with the role "owner"
+        $owners = User::where('role', 'owner')->get();
+        $selectedOwner = null;
+
+        if (!$userId) {
+            // If $userId is null, default to the first owner
+            $selectedOwner = $owners->first();
+        } else {
+            // If $userId is provided, find the owner with that ID
+            $selectedOwner = $owners->find($userId);
+        }
+
+        // Check if a valid owner is selected
+        if ($selectedOwner) {
+            // Get daily income
+            $dailyIncome = Sale::where('user_id', $selectedOwner->id)
+                ->whereDate('created_at', today())
+                ->sum('total_amount');
+
+            // Get monthly income
+            $monthlyIncome = Sale::where('user_id', $selectedOwner->id)
+                ->whereYear('created_at', now()->year)
+                ->whereMonth('created_at', now()->month)
+                ->sum('total_amount');
+
+            // Get yearly income
+            $yearlyIncome = Sale::where('user_id', $selectedOwner->id)
+                ->whereYear('created_at', now()->year)
+                ->sum('total_amount');
+
+            // Get weekly income for the past 4 weeks
+            $weeklyIncomePast4Weeks = Sale::where('user_id', $selectedOwner->id)
+                ->whereDate('created_at', '>=', now()->subWeeks(4))
+                ->orderBy('created_at')
+                ->get()
+                ->groupBy(function ($date) {
+                    return Carbon::parse($date->created_at)->weekOfYear;
+                })
+                ->map(function ($weeklyIncome) {
+                    return $weeklyIncome->sum('total_amount');
+                });
+
+            // Check if the current week is greater than 4
+            $currentWeek = Carbon::now()->weekOfYear;
+
+            // Get weekly income for the past 4 weeks
+            $weeklyIncomePast4Weeks = Sale::where('user_id', $selectedOwner->id)
+                ->whereDate('created_at', '>=', now()->subWeeks(4))
+                ->orderBy('created_at')
+                ->get()
+                ->groupBy(function ($date) use ($currentWeek) {
+                    return Carbon::parse($date->created_at)->weekOfYear - ($currentWeek - 4);
+                })
+                ->map(function ($weeklyIncome) {
+                    return $weeklyIncome->sum('total_amount');
+                });
+
+            // Fill in missing weeks with zero values and format keys as "Week X"
+            $WeeklyIncomePast4Weeks = [];
+            for ($weekNumber = 1; $weekNumber <= 4; $weekNumber++) {
+                $weekLabel = "Week $weekNumber";
+                if (isset($weeklyIncomePast4Weeks[$weekNumber])) {
+                    $WeeklyIncomePast4Weeks[$weekLabel] = $weeklyIncomePast4Weeks[$weekNumber];
+                } else {
+                    $WeeklyIncomePast4Weeks[$weekLabel] = 0;
+                }
+            }
+
+            // Get monthly income for the past 3 months (quarterly)
+            $monthlyIncomePast3Months = Sale::where('user_id', $selectedOwner->id)
+                ->whereDate('created_at', '>=', now()->subMonths(3))
+                ->orderBy('created_at')
+                ->get()
+                ->groupBy(function ($date) {
+                    return Carbon::parse($date->created_at)->format('F');
+                })
+                ->map(function ($monthlyIncome) {
+                    return $monthlyIncome->sum('total_amount');
+                });
+
+            // Get the current year
+            $currentYear = date('Y');
+            $yearlyIncomeData = [];
+
+            for ($year = $currentYear - 2; $year <= $currentYear; $year++) {
+                // Get yearly income for the current year
+                $yearlyIncome = Sale::where('user_id', $selectedOwner->id)
+                    ->whereYear('created_at', $year)
+                    ->sum('total_amount');
+
+                // Store the yearly income for the current year in the array
+                $yearlyIncomeData[$year] = $yearlyIncome;
+            }
+
+            // Get popular food items
+            $popularFoods = DB::table('sales')
+                ->join('inventories', 'sales.product_id', '=', 'inventories.id')
+                ->where('sales.user_id', $selectedOwner->id)
+                ->select('inventories.name', DB::raw('SUM(sales.quantity_sold) as total_quantity'))
+                ->groupBy('inventories.name')
+                ->orderByDesc('total_quantity')
+                ->limit(5) // Limit to top 5 popular food items
+                ->get();
+
+            return view('manager.ownerStat_manage', compact(
+                'dailyIncome',
+                'monthlyIncome',
+                'yearlyIncome',
+                'WeeklyIncomePast4Weeks',
+                'monthlyIncomePast3Months',
+                'yearlyIncomeData',
+                'popularFoods',
+                'owners',
+                'selectedOwner'
+            ));
+        } else {
+            // If no valid owner is selected, return an error message or redirect as needed
+            return redirect()->back()->with('error', 'Invalid owner selected.');
+        }
     }
+
+//    public function ownerStats($useId)
+//    {
+//        $owners = User::where('role','owner')->get();
+//        $dailyIncome = Sale::where('user_id', $useId)
+//            ->whereDate('created_at', today())
+//            ->sum('total_amount');
+//
+//        // Get monthly income
+//        $monthlyIncome = Sale::where('user_id', $useId)
+//            ->whereYear('created_at', now()->year)
+//            ->whereMonth('created_at', now()->month)
+//            ->sum('total_amount');
+//
+//        // Get yearly income
+//        $yearlyIncome = Sale::where('user_id', $useId)
+//            ->whereYear('created_at', now()->year)
+//            ->sum('total_amount');
+//
+//        // Get weekly income for the past 4 weeks
+//        $weeklyIncomePast4Weeks = Sale::where('user_id', $useId)
+//            ->whereDate('created_at', '>=', now()->subWeeks(4))
+//            ->orderBy('created_at')
+//            ->get()
+//            ->groupBy(function ($date) {
+//                return Carbon::parse($date->created_at)->weekOfYear;
+//            })
+//            ->map(function ($weeklyIncome) {
+//                return $weeklyIncome->sum('total_amount');
+//            });
+//
+//        // Check if the current week is greater than 4
+//        $currentWeek = Carbon::now()->weekOfYear;
+//
+//// Get weekly income for the past 4 weeks
+//        $weeklyIncomePast4Weeks = Sale::where('user_id', $useId)
+//            ->whereDate('created_at', '>=', now()->subWeeks(4))
+//            ->orderBy('created_at')
+//            ->get()
+//            ->groupBy(function($date) use ($currentWeek) {
+//                return Carbon::parse($date->created_at)->weekOfYear - ($currentWeek - 4);
+//            })
+//            ->map(function($weeklyIncome) {
+//                return $weeklyIncome->sum('total_amount');
+//            });
+//
+//// Fill in missing weeks with zero values and format keys as "Week X"
+//        $WeeklyIncomePast4Weeks = [];
+//        for ($weekNumber = 1; $weekNumber <= 4; $weekNumber++) {
+//            $weekLabel = "Week $weekNumber";
+//            if (isset($weeklyIncomePast4Weeks[$weekNumber])) {
+//                $WeeklyIncomePast4Weeks[$weekLabel] = $weeklyIncomePast4Weeks[$weekNumber];
+//            } else {
+//                $WeeklyIncomePast4Weeks[$weekLabel] = 0;
+//            }
+//        }
+//
+//        // Get monthly income for the past 3 months (quarterly)
+//        $monthlyIncomePast3Months = Sale::where('user_id', $useId)
+//            ->whereDate('created_at', '>=', now()->subMonths(3))
+//            ->orderBy('created_at')
+//            ->get()
+//            ->groupBy(function ($date) {
+//                return Carbon::parse($date->created_at)->format('F');
+//            })
+//            ->map(function ($monthlyIncome) {
+//                return $monthlyIncome->sum('total_amount');
+//            });
+//
+//        // Get the current year
+//        $currentYear = date('Y');
+//        $yearlyIncomeData = [];
+//
+//        for ($year = $currentYear - 2; $year <= $currentYear; $year++) {
+//            // Get yearly income for the current year
+//            $yearlyIncome = Sale::where('user_id', $useId)
+//                ->whereYear('created_at', $year)
+//                ->sum('total_amount');
+//
+//            // Store the yearly income for the current year in the array
+//            $yearlyIncomeData[$year] = $yearlyIncome;
+//        }
+//        // Get popular food items
+//        $popularFoods = DB::table('sales')
+//            ->join('inventories', 'sales.product_id', '=', 'inventories.id')
+//            ->where('sales.user_id', $useId)
+//            ->select('inventories.name', DB::raw('SUM(sales.quantity_sold) as total_quantity'))
+//            ->groupBy('inventories.name')
+//            ->orderByDesc('total_quantity')
+//            ->limit(5) // Limit to top 5 popular food items
+//            ->get();
+//        return view('manager.ownerStat_manage', compact(
+//            'dailyIncome',
+//            'monthlyIncome',
+//            'yearlyIncome',
+//            'WeeklyIncomePast4Weeks',
+//            'monthlyIncomePast3Months',
+//            'yearlyIncomeData',
+//            'popularFoods',
+//            'owners'
+//        ));
+//    }
 
 
 }

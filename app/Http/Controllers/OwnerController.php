@@ -184,7 +184,6 @@ class OwnerController extends Controller
 
         // Load the view with sales data, start and end date, and total amount
         $pdf = PDF::loadView('pdf.report', compact('sales', 'startDate', 'endDate', 'totalAmount'));
-
         // Download the PDF with a meaningful filename
         return $pdf->download('sales-report-' . $startDate->format('Y-m-d') . '-to-' . $endDate->format('Y-m-d') . '.pdf');
     }

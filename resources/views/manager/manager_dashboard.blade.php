@@ -62,13 +62,12 @@
                                 <h5 class="text-xl font-semibold mb-2">Statistical Owner Management</h5>
                                 <hr class="my-2">
                                 <p class="text-sm text-gray-700">View and Manage your rentals</p>
-                                <a href="{{ route('stat.owner') }}" class="inline-block mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Go to Rental Management</a>
+                                <a href="{{ route('stat.owner', ['userid' => '0']) }}" class="inline-block mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">Go to Rental Management</a>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-
         </div>
     </div>
 
