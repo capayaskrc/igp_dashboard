@@ -21,15 +21,31 @@ class ManagerController extends Controller
     //
     public function index()
     {
-        $owners = User::where('role', 'owner')->get();
-        // You can pass data to the view if necessary
+        // Fetch users with role "owner" or "guest"
+        $owners = User::whereIn('role', ['owner', 'guest'])->get();
+
+        // Pass data to the view
         return view('manager.owner_manage', compact('owners'));
     }
 
+
     public function rental()
     {
-        // Fetch owners and categories
-        $owners = User::where('role', 'owner')->get();
+        // Fetch rentals with their associated owner, category, and renter
+        $rentals = DB::table('rentals')
+            ->join('users as owners', 'rentals.owner_id', '=', 'owners.id')
+            ->join('categories', 'rentals.category_id', '=', 'categories.id')
+            ->select(
+                'rentals.id as id',
+                'owners.name as owner_name',
+                'categories.name',
+                'categories.rent_name',
+                'rentals.rent_price',
+                'rentals.start_date',
+                'rentals.due_date',
+                'rentals.paid_for_this_month'
+            )
+            ->get();
         $categories = Category::all();
 
         $groupedCategories = [];
@@ -44,15 +60,27 @@ class ManagerController extends Controller
             // Add the rent name to the array for the category name
             $groupedCategories[$category->name][] = $category->rent_name;
         }
-        // Fetch rentals with their associated owner and category
-        $rentals = Rental::with(['owner', 'category'])->get();
-        $startDates = Rental::pluck('start_date')->toArray();
-        $dueDates = Rental::pluck('due_date')->toArray();
+        $owners = User::whereIn('role', ['owner'])->get();
+        // Create array to hold event details for each rental
+        $events = [];
 
-        $bookedDates = array_merge($startDates, $dueDates);
-        // Pass data to the view
-        return view('manager.rental_manage', compact('rentals', 'owners', 'categories', 'bookedDates', 'groupedCategories'));
+        // Populate events array with event details for each rental
+        foreach ($rentals as $rental) {
+            $events[] = [
+                'title' => 'Rent for ' . $rental->owner_name,
+                'start' => $rental->start_date,
+                'end' => $rental->due_date,
+            ];
+        }
+//        dd($events);
+        // Pass both rentals and events data to the view
+        return view('manager.rental_manage', compact('rentals', 'events', 'owners', 'groupedCategories'));
     }
+
+
+
+
+
 
     public function store(Request $request)
     {

@@ -28,17 +28,17 @@
                 <tbody>
                 @forelse ($rentals as $rental)
                     <tr>
-                        <td class="px-4 py-2 ">{{ $rental->owner->name }}</td>
-                        @if ($rental->category)
-                            <td class="px-4 py-2">{{ $rental->category->rent_name }}</td>
-                            <td class="px-4 py-2 ">  {{ $rental->category->name }}</td>
+                        <td class="px-4 py-2 ">{{ $rental->owner_name }}</td>
+                        @if ($rental)
+                            <td class="px-4 py-2">{{ $rental->rent_name }}</td>
+                            <td class="px-4 py-2 ">  {{ $rental->name }}</td>
                         @else
                             <td class="px-4 py-2 ">  No rent</td>
                             <td class="px-4 py-2 ">  no category</td>
                         @endif
                         <td class="px-4 py-2 ">₱{{ number_format($rental->rent_price, 2) }}</td>
-                        <td class="px-4 py-2 ">{{ $rental->start_date->format('Y-m-d') }}</td>
-                        <td class="px-4 py-2 ">{{ $rental->due_date->format('Y-m-d') }}</td>
+                        <td class="px-4 py-2 ">{{ $rental->start_date }}</td>
+                        <td class="px-4 py-2 ">{{ $rental->due_date }}</td>
                         <td class="px-4 py-2 ">{{ $rental->paid_for_this_month ? 'Yes' : 'No' }}</td>
                         <td class="px-4 py-2 ">
                             <!-- Dropdown for managing rental -->
@@ -262,46 +262,31 @@
                     });
             }
         }
-        {{--document.addEventListener('DOMContentLoaded', function() {--}}
-        {{--    const calendarEl = document.getElementById('calendar');--}}
-        {{--    const calendar = new Calendar(calendarEl, {--}}
-        {{--        plugins: ['dayGrid'],--}}
-        {{--        events: [--}}
-        {{--                @foreach($rentals as $rental)--}}
-        {{--            {--}}
-        {{--                title: '{{ $rental->name }}',--}}
-        {{--                start: '{{ $rental->start_date }}',--}}
-        {{--                end: '{{ $rental->due_date }}',--}}
-        {{--            },--}}
-        {{--            @endforeach--}}
-        {{--        ]--}}
-        {{--    });--}}
-        {{--    calendar.render();--}}
-        {{--});--}}
-        let calendar;
+
         document.addEventListener('DOMContentLoaded', function() {
-            const rentals = [
-                    @foreach($rentals as $rental)
-                {
-                    title: '{{ $rental->id }}',
-                    start: '{{ $rental->start_date }}',
-                    end: '{{ $rental->due_date }}',
-                },
-                @endforeach
-            ];
-
-            const calendarEl = document.getElementById('calendar');
-            calendar = new FullCalendar.Calendar(calendarEl, {
-                plugins: ['dayGrid'],
-                eventSources: [{
-                    events: rentals
-                }]
+            var calendarEl = document.getElementById('calendar');
+            var calendar = new Calendar(calendarEl, {
+                plugins: [ dayGridPlugin ],
+                initialView: 'dayGridMonth', // or any other view
+                events: {!! json_encode($events) !!},
+                eventDidMount: function(info) {
+                    // Generate random dark color
+                    var randomColor = generateRandomDarkColor();
+                    info.el.style.backgroundColor = randomColor;
+                }
             });
-
-            console.log('Events:', calendar.getEvents()); // Log events
             calendar.render();
-            var vw = calendar.view;
         });
 
+        function generateRandomDarkColor() {
+            var letters = '0123456789ABCDEF';
+            var color = '#';
+            for (var i = 0; i < 6; i++) {
+                // Generate random index from 0 to 9 (for dark colors)
+                var index = Math.floor(Math.random() * 10);
+                color += letters[index];
+            }
+            return color;
+        }
     </script>
 </x-app-layout>
