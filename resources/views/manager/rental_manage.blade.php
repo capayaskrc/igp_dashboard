@@ -270,13 +270,23 @@
                 initialView: 'dayGridMonth', // or any other view
                 events: {!! json_encode($events) !!},
                 eventDidMount: function(info) {
-                    // Generate random dark color
-                    var randomColor = generateRandomDarkColor();
-                    info.el.style.backgroundColor = randomColor;
+                    // Check if the event is already in the eventColors object
+                    if (info.event.title in eventColors) {
+                        // Use the same color for the event
+                        info.el.style.backgroundColor = eventColors[info.event.title];
+                    } else {
+                        // Generate a new random dark color
+                        var randomColor = generateRandomDarkColor();
+                        info.el.style.backgroundColor = randomColor;
+                        // Store the color in the eventColors object
+                        eventColors[info.event.title] = randomColor;
+                    }
                 }
             });
             calendar.render();
         });
+
+        var eventColors = {};
 
         function generateRandomDarkColor() {
             var letters = '0123456789ABCDEF';
