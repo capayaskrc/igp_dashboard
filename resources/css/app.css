@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+
+@fullcalendar/core/main.css;
+@fullcalendar/daygrid/main.css;
+@fullcalendar/timegrid/main.css;
+@fullcalendar/list/main.css;

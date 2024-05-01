@@ -19,7 +19,7 @@
     </div>
 
     <div class="container mx-auto py-6">
-        @if ($dailyIncome || $monthlyIncome || $yearlyIncome || $WeeklyIncomePast4Weeks || $monthlyIncomePast3Months || $yearlyIncomeData || $popularFoods)
+        @if ($dailyIncome || $monthlyIncome || $yearlyIncome || $WeeklyIncomePast4Weeks || $monthlyIncomePast5Months || $yearlyIncomeData || $popularFoods)
             <div class="flex flex-wrap gap-4">
                 <!-- Card for Daily Income -->
                 <div class="bg-white rounded-lg shadow-md p-4 flex-grow">
@@ -80,10 +80,9 @@
         var weeklyIncomeCtx = document.getElementById('weeklyIncomeChart').getContext('2d');
         var monthlyIncomeCtx = document.getElementById('monthlyIncomeChart').getContext('2d');
         var yearlyIncomeCtx = document.getElementById('yearlyIncomeChart').getContext('2d');
-
+        var monthlyIncomeLabels = {!! json_encode(array_keys($monthlyIncomePast5Months)) !!};
+        var monthlyIncomeData = {!! json_encode(array_values($monthlyIncomePast5Months)) !!};
         // Format date labels
-        var monthlyIncomeLabels = {!! json_encode(array_map(function($key) { return Carbon\Carbon::parse($key)->format('Y-m'); }, array_keys($monthlyIncomePast3Months->toArray()))) !!};
-
         var currentDate = new Date();
         var currentWeek = Math.ceil((((currentDate - new Date(currentDate.getFullYear(), 0, 1)) / 86400000) + 1) / 7);
 
@@ -134,17 +133,17 @@
                 labels: monthlyIncomeLabels,
                 datasets: [{
                     label: 'Monthly Income',
-                    data: {!! json_encode(array_values($monthlyIncomePast3Months->toArray())) !!},
+                    data: monthlyIncomeData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
                     borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 2,
-                    fill: false
+                    borderWidth: 1
                 }]
             },
             options: {
                 scales: {
                     yAxes: [{
                         ticks: {
-                            beginAtZero: false
+                            beginAtZero: true
                         }
                     }]
                 }

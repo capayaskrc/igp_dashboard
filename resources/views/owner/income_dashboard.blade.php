@@ -8,7 +8,7 @@
     <div class="py-6">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-xl sm:rounded-lg p-6">
-                <div class="mb-4">
+                <div class="mb-4 flex items-end">
                     <form method="GET" action="{{ route('income.manage') }}" class="flex space-x-4 items-end">
                         <div>
                             <label for="date" class="block text-sm font-medium text-gray-700">Start Date:</label>
@@ -24,10 +24,12 @@
                             </button>
                         </div>
                     </form>
+                        <button onclick="window.location='{{ route('generate.pdf', ['startDate' => $date, 'endDate' => $endDate]) }}'" class="inline-flex px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 ml-3">
+                            Generate PDF Report
+                        </button>
+
                 </div>
-                <button onclick="window.location='{{ route('generate.pdf', ['startDate' => $date, 'endDate' => $endDate]) }}'" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-                    Generate PDF Report
-                </button>
+
                 <h3 class="text-lg leading-6 font-medium text-gray-900">Sales from {{ $date }} to {{ $endDate }}</h3>
 
                 <div class="mt-4">

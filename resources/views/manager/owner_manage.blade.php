@@ -25,7 +25,7 @@
                             <td class="px-4 py-2 ">{{ $owner->name }}</td>
                             <td class="px-4 py-2 ">{{ $owner->email }}</td>
                             <td class="px-4 py-2 ">
-                                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" data-toggle="modal" data-target="#editOwnerModal{{ $owner->id }}">Edit</button>
+{{--                                <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" data-toggle="modal" data-target="#editOwnerModal{{ $owner->id }}">Edit</button>--}}
                                 <button
                                     class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded {{ $owner->active ? 'bg-red-500 hover:bg-red-700' : 'bg-green-500 hover:bg-green-700' }}"
                                     onclick="toggleUserStatus({{ $owner->id }}, {{ $owner->active ? '0' : '1' }})">

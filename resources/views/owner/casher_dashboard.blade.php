@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Casher Dashboard') }}
+            {{ __('Cashier Dashboard') }}
         </h2>
     </x-slot>
     <div class="container container-fluid mx-auto p-8 mt-5 border-b-2 border-t-2">
@@ -11,7 +11,12 @@
                 @foreach ($productsByCategory as $category => $products)
                     <div class="card mb-4">
                         <div id="category-{{ $loop->index + 1 }}" class="category card-body">
-                            <h2 class="text-xl font-semibold mb-2 cursor-pointer">{{ $category }}</h2>
+                            <div class="flex items-center mb-2 cursor-pointer">
+                                <h2 class="text-xl font-semibold mr-3">{{ $category }}</h2>
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-6 h-6 arrow-icon">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 5.25 7.5 7.5 7.5-7.5m-15 6 7.5 7.5 7.5-7.5" />
+                                </svg>
+                            </div>
                             <div class="border-b mb-3"></div> <!-- Line below the category -->
                             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 space-y-4 hidden">
                                 @foreach ($products as $product)
@@ -37,20 +42,8 @@
     </div>
 
 
+
     <script>
-        function updateTotal() {
-            const selectedProducts = document.querySelectorAll('.selected-product');
-            let total = 0;
-
-            selectedProducts.forEach(function(selectedProduct) {
-                const totalText = selectedProduct.querySelector('.mx-2');
-                const subtotal = parseFloat(totalText.textContent.replace('Total: P', ''));
-                total += subtotal;
-            });
-
-            document.getElementById('total').textContent = total.toFixed(2);
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
             const categories = document.querySelectorAll('.category');
 
@@ -62,13 +55,18 @@
                     productsContainer.classList.toggle('hidden');
                 });
 
+                const svgIcon = category.querySelector('.arrow-icon');
+                svgIcon.addEventListener('click', function() {
+                    productsContainer.classList.toggle('hidden');
+                });
+
                 const products = productsContainer.querySelectorAll('.product');
 
                 products.forEach(function(product) {
                     product.addEventListener('click', function() {
                         const productName = product.querySelector('.product-name').textContent;
-                        const productPriceElement = product.querySelector('.product-price'); // Select the product price element
-                        const productPriceText = productPriceElement ? productPriceElement.textContent : ''; // Check if the price element exists
+                        const productPriceElement = product.querySelector('.product-price');
+                        const productPriceText = productPriceElement ? productPriceElement.textContent : '';
                         const productPrice = parseFloat(productPriceText.replace('Price: P', ''));
 
                         let selectedProduct = document.createElement('div');
@@ -83,8 +81,13 @@
                             <label for="quantity" class="mr-2">Quantity</label>
                             <input type="number" class="quantity w-16" value="1" min="1">
                         </div>
-                        <div>
+                        <div class="selected-product-action flex items-center">
                             <p class="mx-2">Total: P${productPrice.toFixed(2)}</p>
+                            <button class="remove-product ml-2 focus:outline-none">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="currentColor" class="w-4 h-4 remove-product-btn">
+                                    <path d="M5.28 4.22a.75.75 0 0 0-1.06 1.06L6.94 8l-2.72 2.72a.75.75 0 1 0 1.06 1.06L8 9.06l2.72 2.72a.75.75 0 1 0 1.06-1.06L9.06 8l2.72-2.72a.75.75 0 0 0-1.06-1.06L8 6.94 5.28 4.22Z" />
+                                </svg>
+                            </button>
                         </div>
                     </div>
                 `;
@@ -111,7 +114,7 @@
                 const salesData = [];
                 selectedProducts.forEach(function(selectedProduct) {
                     const productName = selectedProduct.querySelector('.font-semibold').textContent;
-                    const productPrice = parseFloat(selectedProduct.querySelector('.price').textContent.replace('Price: P', '')); // Changed to select the price directly
+                    const productPrice = parseFloat(selectedProduct.querySelector('.price').textContent.replace('Price: P', ''));
                     const quantity = parseInt(selectedProduct.querySelector('.quantity').value);
                     const totalAmount = parseFloat(selectedProduct.querySelector('.mx-2').textContent.replace('Total: P', ''));
 
@@ -126,6 +129,18 @@
             });
         });
 
+        function updateTotal() {
+            const selectedProducts = document.querySelectorAll('.selected-product');
+            let total = 0;
+
+            selectedProducts.forEach(function(selectedProduct) {
+                const totalText = selectedProduct.querySelector('.mx-2');
+                const subtotal = parseFloat(totalText.textContent.replace('Total: P', ''));
+                total += subtotal;
+            });
+
+            document.getElementById('total').textContent = total.toFixed(2);
+        }
 
         function saveSalesData(salesData) {
             fetch('/owner/dashboard/save-sales-data', {
@@ -141,13 +156,23 @@
                     console.log(data);
                     document.getElementById('selected-products').innerHTML = '';
                     document.getElementById('total').textContent = '0.00';
-                    alert('Payment processed successfully!'); // Optionally show a success message
+                    alert('Payment processed successfully!');
                 })
                 .catch(error => {
                     console.error('Error:', error);
                 });
         }
 
+        // Event delegation for dynamically added remove product buttons
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('remove-product-btn')) {
+                const selectedProduct = event.target.closest('.selected-product');
+                if (selectedProduct) {
+                    selectedProduct.remove();
+                    updateTotal();
+                }
+            }
+        });
     </script>
 
 </x-app-layout>

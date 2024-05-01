@@ -6,6 +6,9 @@
     </x-slot>
 
     <div class="container mx-auto p-8">
+        <div class="mb-5">
+            <div id="calendar" class="mx-auto" style="max-width: 800px;"></div>
+        </div>
         <div class="mb-4 flex justify-between items-center">
             <button class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded" data-toggle="modal" data-target="#addRentalModal">
                 Add Rental
@@ -68,9 +71,7 @@
                 </tbody>
             </table>
         </div>
-        <div class="mb-5">
-            <div id="calendar" class="mx-auto" style="max-width: 800px;"></div>
-        </div>
+
 
     </div>
 

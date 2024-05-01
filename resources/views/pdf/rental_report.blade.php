@@ -1,91 +1,57 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rental Report</title>
+    <title>Balance Sheet</title>
     <style>
-        /* Add your CSS styles here */
         table {
-            border-collapse: collapse;
             width: 100%;
+            border-collapse: collapse;
         }
-
         th, td {
-            border: 1px solid #ddd;
-            padding: 8px;
+            border: 1px solid #dddddd;
             text-align: left;
+            padding: 8px;
         }
-
         th {
             background-color: #f2f2f2;
         }
-
-        .total {
+        .total-row td {
             font-weight: bold;
-            color: #4CAF50;
-            font-size: 18px;
-            margin-top: 20px;
         }
     </style>
 </head>
 <body>
-<!-- Table for Paid Owners -->
-<h2>Paid Owners This Month</h2>
+
+<h2>Balance Sheet</h2>
+
 <table>
     <thead>
     <tr>
-        <th>Rental ID</th>
-        <th>Owner Name</th>
-        <th>Rental Name</th>
-        <th>Rent Price</th>
-        <!-- Add more columns as needed -->
+        <th>Name of the Renter</th>
+        <th>Item that is being rented</th>
+        <th>Date rented and until</th>
+        <th>Paid</th>
+        <th>Unpaid</th>
     </tr>
     </thead>
     <tbody>
-    @foreach ($paidRentals as $rental)
+    @foreach($balanceSheet as $item)
         <tr>
-            <td>{{ $rental->id }}</td>
-            <td>{{ $rental->owner_name }}</td>
-            <td>{{ $rental->rental_name }}</td>
-            <td>P {{ $rental->rent_price }}</td>
-            <!-- Add more columns as needed -->
+            <td>{{ $item['Name of the Renter'] }}</td>
+            <td>{{ $item['Item that is being rented'] }}</td>
+            <td>{{ $item['Date rented and until'] }}</td>
+            <td>P {{ $item['Paid'] }}</td>
+            <td>P {{ $item['Unpaid'] }}</td>
         </tr>
     @endforeach
-    </tbody>
-</table>
-
-<!-- Table for Unpaid Owners -->
-<h2>Unpaid Owners This Month</h2>
-<table>
-    <thead>
-    <tr>
-        <th>Rental ID</th>
-        <th>Owner Name</th>
-        <th>Rental Name</th>
-        <th>Rent Price</th>
-        <!-- Add more columns as needed -->
+    <!-- Total row for paid and unpaid -->
+    <tr class="total-row">
+        <td colspan="3">Total</td>
+        <td>P {{ $totalPaid }}</td>
+        <td>P {{ $totalUnpaid }}</td>
     </tr>
-    </thead>
-    <tbody>
-    @foreach ($unpaidRentals as $rental)
-        <tr>
-            <td>{{ $rental->id }}</td>
-            <td>{{ $rental->owner_name }}</td>
-            <td>{{ $rental->rental_name }}</td>
-            <td>P {{ $rental->rent_price }}</td>
-            <!-- Add more columns as needed -->
-        </tr>
-    @endforeach
     </tbody>
 </table>
-
-<!-- Total income section -->
-<div class="total">
-    <p>Total Income from Paid Rentals: P {{ $totalIncomePaid }}</p>
-    <p>Total Potential Income from Unpaid Rentals: P {{ $totalPotentialIncomeUnpaid }}</p>
-</div>
 
 </body>
 </html>

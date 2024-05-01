@@ -192,16 +192,35 @@ class ManagerController extends Controller
         // Get the total potential income from unpaid rentals
         $potentialIncome = Rental::where('paid_for_this_month', false)->sum('rent_price');
 
-        $monthlyIncomeData = Rental::where('paid_for_this_month', true)
-            ->whereYear('start_date', Carbon::now()->year)
-            ->get()
-            ->groupBy(function($date) {
-                return Carbon::parse($date->start_date)->format('F');
-            })
-            ->map(function($month) {
-                return $month->sum('rent_price');
-            });
+        $monthlyIncomeData = [];
+        $currentYear = Carbon::now()->year;
+        $currentMonth = Carbon::now()->month;
 
+        // Calculate the starting month for the loop
+        $startMonth = ($currentMonth - 3 <= 0) ? 12 + ($currentMonth - 3) : $currentMonth - 3;
+
+        for ($i = 0; $i < 4; $i++) {
+            $month = ($startMonth + $i <= 12) ? $startMonth + $i : $startMonth + $i - 12;
+            $year = ($startMonth + $i <= 12) ? $currentYear : $currentYear - 1;
+
+            $monthlyIncomeData[Carbon::createFromDate($year, $month, 1)->format('F')] = Rental::where('paid_for_this_month', true)
+                ->whereYear('start_date', $year)
+                ->whereMonth('start_date', $month)
+                ->sum('rent_price');
+        }
+
+        // Replace missing values with zero
+        foreach (range(1, 3) as $i) {
+            $month = Carbon::now()->subMonths($i)->format('F');
+            if (!isset($monthlyIncomeData[$month])) {
+                $monthlyIncomeData[$month] = 0;
+            }
+        }
+
+        // Sort the array by month
+        uksort($monthlyIncomeData, function ($a, $b) {
+            return Carbon::parse($a)->month - Carbon::parse($b)->month;
+        });
         // Return the statistical data to the view
         return view('manager.statistical_manage', [
             'paidCount' => $paidCount,
@@ -249,8 +268,8 @@ class ManagerController extends Controller
         $currentMonth = now()->month;
         $currentYear = now()->year;
 
-        // Fetch all rentals for the current month with owner names and rental names
-        $rentals = Rental::select('rentals.*', 'users.name as owner_name', 'categories.rent_name as rental_name')
+        // Fetch all rentals for the current month with renter names and rental names
+        $rentals = Rental::select('rentals.*', 'users.name as renter_name', 'categories.rent_name as rental_name')
             ->leftJoin('users', 'rentals.owner_id', '=', 'users.id')
             ->leftJoin('categories', 'rentals.category_id', '=', 'categories.id')
             ->whereMonth('rentals.created_at', $currentMonth)
@@ -261,16 +280,41 @@ class ManagerController extends Controller
         $paidRentals = $rentals->where('paid_for_this_month', true);
         $unpaidRentals = $rentals->where('paid_for_this_month', false);
 
-        // Calculate total income from paid rentals
-        $totalIncomePaid = $paidRentals->sum('rent_price');
+        // Initialize arrays to hold paid and unpaid items
+        $paidItems = [];
+        $unpaidItems = [];
 
-        // Calculate total potential income from unpaid rentals
-        $totalPotentialIncomeUnpaid = $unpaidRentals->sum('rent_price');
+        // Populate the arrays with appropriate data
+        foreach ($paidRentals as $rental) {
+            $paidItems[] = [
+                'Name of the Renter' => $rental->renter_name,
+                'Item that is being rented' => $rental->rental_name,
+                'Date rented and until' => $rental->start_date->format('Y-m-d') . ' to ' . $rental->due_date->format('Y-m-d'),
+                'Paid' => $rental->rent_price,
+                'Unpaid' => 0,
+            ];
+        }
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.rental_report', compact('paidRentals', 'unpaidRentals', 'totalIncomePaid', 'totalPotentialIncomeUnpaid'));
+        foreach ($unpaidRentals as $rental) {
+            $unpaidItems[] = [
+                'Name of the Renter' => $rental->renter_name,
+                'Item that is being rented' => $rental->rental_name,
+                'Date rented and until' => $rental->start_date->format('Y-m-d') . ' to ' . $rental->due_date->format('Y-m-d'),
+                'Paid' => 0,
+                'Unpaid' => $rental->rent_price,
+            ];
+        }
+        $totalPaid = $paidRentals->sum('rent_price');
+        $totalUnpaid = $unpaidRentals->sum('rent_price');
 
-        return $pdf->download('rental_report_-' . now()->format('F_Y') . '.pdf');
+        // Combine paid and unpaid items into a single array
+        $balanceSheet = array_merge($paidItems, $unpaidItems);
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('pdf.rental_report', compact('balanceSheet', 'totalPaid', 'totalUnpaid'));
+
+        return $pdf->download('balance_sheet_-' . now()->format('F_Y') . '.pdf');
     }
+
 
 
 
@@ -345,17 +389,31 @@ class ManagerController extends Controller
                 }
             }
 
-            // Get monthly income for the past 3 months (quarterly)
-            $monthlyIncomePast3Months = Sale::where('user_id', $selectedOwner->id)
-                ->whereDate('created_at', '>=', now()->subMonths(3))
-                ->orderBy('created_at')
-                ->get()
-                ->groupBy(function ($date) {
-                    return Carbon::parse($date->created_at)->format('F');
-                })
-                ->map(function ($monthlyIncome) {
-                    return $monthlyIncome->sum('total_amount');
-                });
+            // Get monthly income for the current month and past 4 months
+            $monthlyIncomePast5Months = [];
+            $currentYear = now()->year;
+            $currentMonth = now()->month;
+
+            // Calculate the starting month for the loop
+            $startMonth = ($currentMonth - 3 <= 0) ? 12 + ($currentMonth - 3) : $currentMonth - 3;
+
+            for ($i = 0; $i < 4; $i++) {
+                $month = ($startMonth + $i <= 12) ? $startMonth + $i : $startMonth + $i - 12;
+                $year = ($startMonth + $i <= 12) ? $currentYear : $currentYear - 1;
+
+                $monthlyIncomePast5Months[Carbon::createFromDate($year, $month, 1)->format('F')] = Sale::where('user_id', $selectedOwner->id)
+                    ->whereYear('created_at', $year)
+                    ->whereMonth('created_at', $month)
+                    ->sum('total_amount');
+            }
+
+            // Reorder the array so that the current month is at the end
+            if (isset($monthlyIncomePast5Months[now()->format('F')])) {
+                $currentMonthIncome = $monthlyIncomePast5Months[now()->format('F')];
+                unset($monthlyIncomePast5Months[now()->format('F')]);
+                $monthlyIncomePast5Months[now()->format('F')] = $currentMonthIncome;
+            }
+
 
             // Get the current year
             $currentYear = date('Y');
@@ -370,7 +428,6 @@ class ManagerController extends Controller
                 // Store the yearly income for the current year in the array
                 $yearlyIncomeData[$year] = $yearlyIncome;
             }
-
             // Get popular food items
             $popularFoods = DB::table('sales')
                 ->join('inventories', 'sales.product_id', '=', 'inventories.id')
@@ -380,13 +437,12 @@ class ManagerController extends Controller
                 ->orderByDesc('total_quantity')
                 ->limit(5) // Limit to top 5 popular food items
                 ->get();
-
             return view('manager.ownerStat_manage', compact(
                 'dailyIncome',
                 'monthlyIncome',
                 'yearlyIncome',
                 'WeeklyIncomePast4Weeks',
-                'monthlyIncomePast3Months',
+                'monthlyIncomePast5Months',
                 'yearlyIncomeData',
                 'popularFoods',
                 'owners',
