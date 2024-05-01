@@ -316,9 +316,6 @@ class ManagerController extends Controller
     }
 
 
-
-
-
     public function ownerStat($userId)
     {
         // Find users with the role "owner"

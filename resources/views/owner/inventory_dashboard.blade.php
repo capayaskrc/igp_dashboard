@@ -39,7 +39,7 @@
                                     Manage Rental
                                 </button>
                                 <div class="dropdown-menu" aria-labelledby="manageDropdown">
-                                    <button type="button" class="btn btn-primary dropdown-item" data-toggle="modal" data-target="#restockModal">Restock</button>
+                                    <button type="button" class="btn btn-primary dropdown-item" onclick="showRestockModal('{{ $inventory->id }}', '{{ $inventory->name }}', '{{ $inventory->price }}', '{{ $inventory->current_quantity }}')">Restock</button>
                                     <button type="button" class="btn btn-primary dropdown-item" onclick="showRemoveStockModal({{ $inventory->id }}, '{{ $inventory->name }}', {{ $inventory->current_quantity }})">Remove Stock</button>
                                 </div>
                             </div>
@@ -91,7 +91,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                         <button type="submit" class="btn btn-primary">Save Item</button>
                     </div>
                 </form>
@@ -108,24 +108,24 @@
                         <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
-                <form action="{{ route('inventory.restock') }}" method="POST">
+                <form id="restockForm" method="POST">
                     @csrf
+                    <input type="hidden" name="itemId" id="itemId">
                     <div class="modal-body">
                         <!-- Display item name and price -->
                         <div class="form-group">
                             <label for="itemName">Item Name:</label>
-                            <input type="text" class="form-control" id="itemName" name="itemName" value="{{ $inventory->name }}" disabled>
-                            <input type="hidden" id="itemName" name="itemName" value="{{ $inventory->name }}">
+                            <input type="text" class="form-control" id="itemName" name="itemName" disabled>
                         </div>
                         <div class="form-group">
                             <label for="itemPrice">Price:</label>
-                            <input type="text" class="form-control" id="itemPrice" name="itemPrice" value="₱{{ number_format($inventory->price, 2) }}" disabled>
+                            <input type="text" class="form-control" id="itemPrice" name="itemPrice" disabled>
                         </div>
 
                         <!-- Allow editing current quantity (must be larger than initial quantity) -->
                         <div class="form-group">
                             <label for="currentQuantity">Current Quantity:</label>
-                            <input type="number" class="form-control" id="currentQuantity" name="currentQuantity" value="{{ $inventory->current_quantity }}" min="0" required>
+                            <input type="number" class="form-control" id="currentQuantity" name="currentQuantity" min="0" required>
                             <small class="text-danger">The current quantity must be larger than the initial quantity.</small>
                         </div>
 
@@ -137,13 +137,13 @@
 
                         <!-- Alert for confirming initial quantity editing -->
                         <div class="alert alert-warning" role="alert" id="editInitialQuantityAlert" style="display: none;">
-                           You are now editing the initial quantity
+                            You are now editing the initial quantity
                         </div>
 
                         <!-- Allow editing initial quantity -->
                         <div class="form-group" id="initialQuantityFormGroup" style="display: none;">
                             <label for="initialQuantity">Initial Quantity:</label>
-                            <input type="number" class="form-control" id="initialQuantity" name="initialQuantity" value="{{ $inventory->initial_quantity }}" min="0" required>
+                            <input type="number" class="form-control" id="initialQuantity" name="initialQuantity" min="0" required>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -154,6 +154,7 @@
             </div>
         </div>
     </div>
+
 
     <div class="modal fade" id="confirmRemoveStockModal" tabindex="-1" aria-labelledby="confirmRemoveStockModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -199,11 +200,23 @@
         document.getElementById('editInitialQuantityCheckbox').addEventListener('change', toggleInitialQuantityEditing);
 
         function showRemoveStockModal(itemId, itemName, currentQuantity) {
+            console.log()
             $('#removeStockItemName').text(itemName);
             $('#removeStockQuantity').text(currentQuantity);
             $('#quantityToRemove').val('');
             $('#confirmRemoveStockModal').modal('show');
             $('#removeStockForm').attr('action', '/owner/dashboard/inventory/' + itemId + '/remove');
+        }
+
+        function showRestockModal(itemId, itemName, itemPrice, currentQuantity) {
+            $('#itemName').val(itemName);
+            $('#itemPrice').val(itemPrice);
+            $('#currentQuantity').val(currentQuantity);
+            $('#editInitialQuantityCheckbox').prop('checked', false);
+            $('#initialQuantityFormGroup').hide();
+            $('#editInitialQuantityAlert').hide();
+            $('#restockModal').modal('show');
+            $('#restockForm').attr('action', '/owner/dashboard/inventory/' + itemId + '/restock');
         }
     </script>
 

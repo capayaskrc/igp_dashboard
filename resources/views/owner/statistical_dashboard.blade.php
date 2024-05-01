@@ -65,7 +65,8 @@
         var yearlyIncomeCtx = document.getElementById('yearlyIncomeChart').getContext('2d');
 
         // Format date labels
-        var monthlyIncomeLabels = {!! json_encode(array_map(function($key) { return Carbon\Carbon::parse($key)->format('Y-m'); }, array_keys($monthlyIncomePast3Months->toArray()))) !!};
+        var monthlyIncomeLabels = {!! json_encode(array_keys($monthlyIncomePast5Months)) !!};
+        var monthlyIncomeData = {!! json_encode(array_values($monthlyIncomePast5Months)) !!};
 
         var currentDate = new Date();
         var currentWeek = Math.ceil((((currentDate - new Date(currentDate.getFullYear(), 0, 1)) / 86400000) + 1) / 7);
@@ -117,17 +118,17 @@
                 labels: monthlyIncomeLabels,
                 datasets: [{
                     label: 'Monthly Income',
-                    data: {!! json_encode(array_values($monthlyIncomePast3Months->toArray())) !!},
+                    data: monthlyIncomeData,
+                    backgroundColor: 'rgba(54, 162, 235, 0.5)',
                     borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 2,
-                    fill: false
+                    borderWidth: 1
                 }]
             },
             options: {
                 scales: {
                     yAxes: [{
                         ticks: {
-                            beginAtZero: false
+                            beginAtZero: true
                         }
                     }]
                 }

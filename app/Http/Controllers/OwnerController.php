@@ -91,63 +91,41 @@ class OwnerController extends Controller
         return redirect()->back()->with('success', 'Inventory item added successfully!');
     }
 
-    public function restock(Request $request)
+    public function restock(Request $request, $itemId)
     {
         // Validate the request data
         $validatedData = $request->validate([
-            'itemName' => 'required|string|max:255',
             'currentQuantity' => 'required|integer|min:0',
             'initialQuantity' => 'nullable|integer|min:0',
         ]);
 
-        // Find the inventory item by name belonging to the authenticated user
-        $inventory = Inventory::where('name', $validatedData['itemName'])
-            ->where('user_id', Auth::id())
-            ->firstOrFail();
-
-        $quantityChanged = false;
-
-        // Check if the initial quantity has been modified
-        if (isset($validatedData['initialQuantity']) && $validatedData['initialQuantity'] !== $inventory->initial_quantity) {
-            $inventory->initial_quantity = $validatedData['initialQuantity'];
-            $quantityChanged = true;
-        }
+        // Find the inventory item by ID belonging to the authenticated user
+        $inventory = Inventory::findOrFail($itemId);
 
         // Check if the current quantity is different from the existing current quantity
         if ($validatedData['currentQuantity'] !== $inventory->current_quantity) {
             $inventory->current_quantity = $validatedData['currentQuantity'];
-            $quantityChanged = true;
         }
 
-        // Save the changes if the quantity was modified
-        if ($quantityChanged) {
-            $inventory->save();
-            // Redirect back with success message
-            return redirect()->back()->with('success', 'Inventory restocked successfully.');
-        } else {
-            // Redirect back with error message
-            return redirect()->back()->with('error', 'No changes were made to the inventory quantity.');
+        // Check if the initial quantity has been modified
+        if (isset($validatedData['initialQuantity']) && $validatedData['initialQuantity'] !== $inventory->initial_quantity) {
+            $inventory->initial_quantity = $validatedData['initialQuantity'];
         }
+
+        // Save the changes
+        $inventory->save();
+        // Redirect back with success message
+        return redirect()->back()->with('success', 'Inventory restocked successfully.');
     }
 
-
-    public function removeStock(Request $request, $id)
+    public function removeStock($id)
     {
         // Find the inventory item by ID belonging to the authenticated user
         $inventory = Inventory::where('id', $id)
             ->where('user_id', auth()->id())
             ->firstOrFail();
-
-        // Validate the request data
-        $request->validate([
-            'quantityToRemove' => 'required|integer|min:1|max:' . $inventory->current_quantity,
-        ]);
-
-        // Update the current quantity
-        $inventory->current_quantity -= $request->quantityToRemove;
+        $inventory->current_quantity = 0;
         $inventory->save();
-
-        // Redirect back with success message
         return redirect()->back()->with('success', 'Stock removed successfully.');
     }
 
@@ -223,19 +201,19 @@ class OwnerController extends Controller
         // Check if the current week is greater than 4
         $currentWeek = Carbon::now()->weekOfYear;
 
-// Get weekly income for the past 4 weeks
+        // Get weekly income for the past 4 weeks
         $weeklyIncomePast4Weeks = Sale::where('user_id', $userId)
             ->whereDate('created_at', '>=', now()->subWeeks(4))
             ->orderBy('created_at')
             ->get()
-            ->groupBy(function($date) use ($currentWeek) {
+            ->groupBy(function ($date) use ($currentWeek) {
                 return Carbon::parse($date->created_at)->weekOfYear - ($currentWeek - 4);
             })
-            ->map(function($weeklyIncome) {
+            ->map(function ($weeklyIncome) {
                 return $weeklyIncome->sum('total_amount');
             });
 
-// Fill in missing weeks with zero values and format keys as "Week X"
+        // Fill in missing weeks with zero values and format keys as "Week X"
         $WeeklyIncomePast4Weeks = [];
         for ($weekNumber = 1; $weekNumber <= 4; $weekNumber++) {
             $weekLabel = "Week $weekNumber";
@@ -246,17 +224,31 @@ class OwnerController extends Controller
             }
         }
 
-        // Get monthly income for the past 3 months (quarterly)
-        $monthlyIncomePast3Months = Sale::where('user_id', $userId)
-            ->whereDate('created_at', '>=', now()->subMonths(3))
-            ->orderBy('created_at')
-            ->get()
-            ->groupBy(function ($date) {
-                return Carbon::parse($date->created_at)->format('F');
-            })
-            ->map(function ($monthlyIncome) {
-                return $monthlyIncome->sum('total_amount');
-            });
+        // Get monthly income for the current month and past 4 months
+        $monthlyIncomePast5Months = [];
+        $currentYear = now()->year;
+        $currentMonth = now()->month;
+
+        // Calculate the starting month for the loop
+        $startMonth = ($currentMonth - 3 <= 0) ? 12 + ($currentMonth - 3) : $currentMonth - 3;
+
+        for ($i = 0; $i < 4; $i++) {
+            $month = ($startMonth + $i <= 12) ? $startMonth + $i : $startMonth + $i - 12;
+            $year = ($startMonth + $i <= 12) ? $currentYear : $currentYear - 1;
+
+            $monthlyIncomePast5Months[Carbon::createFromDate($year, $month, 1)->format('F')] = Sale::where('user_id', $userId)
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $month)
+                ->sum('total_amount');
+        }
+
+        // Reorder the array so that the current month is at the end
+        if (isset($monthlyIncomePast5Months[now()->format('F')])) {
+            $currentMonthIncome = $monthlyIncomePast5Months[now()->format('F')];
+            unset($monthlyIncomePast5Months[now()->format('F')]);
+            $monthlyIncomePast5Months[now()->format('F')] = $currentMonthIncome;
+        }
+
 
         // Get the current year
         $currentYear = date('Y');
@@ -285,7 +277,7 @@ class OwnerController extends Controller
             'monthlyIncome',
             'yearlyIncome',
             'WeeklyIncomePast4Weeks',
-            'monthlyIncomePast3Months',
+            'monthlyIncomePast5Months',
             'yearlyIncomeData',
             'popularFoods'
         ));
