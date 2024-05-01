@@ -65,6 +65,7 @@ Route::post('/owner/dashboard/income-get', [OwnerController::class, 'fetchSales'
 Route::get('/owner/dashboard/inventory', [OwnerController::class, 'inventory'])->name('inventory.view');
 Route::post('/owner/dashboard/inventory/create', [OwnerController::class, 'create'])->name('inventory.create');
 Route::post('/owner/dashboard/inventory/{id}/restock', [OwnerController::class, 'restock'])->name('inventory.restock');
+Route::delete('/owner/dashboard/inventory/{id}', [OwnerController::class, 'deleteItem'])->name('inventory.destroy');
 Route::post('/owner/dashboard/inventory/{id}/remove', [OwnerController::class, 'removeStock'])->name('inventory.remove');
 Route::get('/owner/manage/statistical', [DashboardController::class, 'owner'])->name('owner.dashboard');
 

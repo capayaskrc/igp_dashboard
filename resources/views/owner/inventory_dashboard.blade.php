@@ -1,7 +1,7 @@
 <x-app-layout>
     <x-slot name="header">
         <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-            {{ __('Casher Dashboard') }}
+            {{ __('Stocks Dashboard') }}
         </h2>
     </x-slot>
     <div class="container mx-auto p-8">
@@ -41,6 +41,7 @@
                                 <div class="dropdown-menu" aria-labelledby="manageDropdown">
                                     <button type="button" class="btn btn-primary dropdown-item" onclick="showRestockModal('{{ $inventory->id }}', '{{ $inventory->name }}', '{{ $inventory->price }}', '{{ $inventory->current_quantity }}')">Restock</button>
                                     <button type="button" class="btn btn-primary dropdown-item" onclick="showRemoveStockModal({{ $inventory->id }}, '{{ $inventory->name }}', {{ $inventory->current_quantity }})">Remove Stock</button>
+                                    <button type="button" class="btn btn-primary dropdown-item" onclick="showRemoveItem({{ $inventory->id }})">Remove Item</button>
                                 </div>
                             </div>
                         </td>
@@ -57,7 +58,29 @@
             </table>
         </div>
     </div>
-
+    <div class="modal fade" id="confirmRemoveItemModal" tabindex="-1" aria-labelledby="confirmRemoveItemModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="confirmRemoveItemModalLabel">Confirm Item Removal</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to remove <span id="removeItemName"></span>?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <form id="removeItemForm" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit" class="btn btn-danger">Remove</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="modal fade" id="addInventoryModal" tabindex="-1" aria-labelledby="addInventoryModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -217,6 +240,12 @@
             $('#editInitialQuantityAlert').hide();
             $('#restockModal').modal('show');
             $('#restockForm').attr('action', '/owner/dashboard/inventory/' + itemId + '/restock');
+        }
+
+        function showRemoveItem(itemId, itemName) {
+            $('#removeItemName').text(itemName);
+            $('#confirmRemoveItemModal').modal('show');
+            $('#removeItemForm').attr('action', '/owner/dashboard/inventory/' + itemId);
         }
     </script>
 

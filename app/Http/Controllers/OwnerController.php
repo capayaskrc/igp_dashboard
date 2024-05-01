@@ -118,6 +118,14 @@ class OwnerController extends Controller
         return redirect()->back()->with('success', 'Inventory restocked successfully.');
     }
 
+    public function deleteItem($id)
+    {
+        $inventory = Inventory::findOrFail($id);
+        $inventory->delete();
+
+        // Redirect back with a success message
+        return redirect()->back()->with('success', 'Inventory item removed successfully.');
+    }
     public function removeStock($id)
     {
         // Find the inventory item by ID belonging to the authenticated user
