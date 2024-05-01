@@ -50,7 +50,6 @@
                                     Manage Rental
                                 </button>
                                 <div class="dropdown-menu" aria-labelledby="manageDropdown">
-                                    <button type="button" class="btn btn-primary dropdown-item" onclick="manageRental()">Manage</button>
                                     <button type="button" class="btn btn-primary dropdown-item" onclick="confirmMarkAsPaid({{ $rental->id }})">Mark as Paid</button>
                                     <button class="btn btn-primary dropdown-item" onclick="deleteRental({{ $rental->id }})">
                                         Delete
