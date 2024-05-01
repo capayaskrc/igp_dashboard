@@ -142,7 +142,7 @@ class ManagerController extends Controller
             $rental->save();
         }
         // Return success response
-//        return redirect()->back()->with('success', 'Rental added successfully');
+        return redirect()->back()->with('success', 'Rental added successfully');
     }
 
 
