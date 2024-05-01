@@ -12,12 +12,13 @@
                     Add Rental Item & Category
                 </button>
 
-                <!-- Table to display rental names and categories -->
+                <!-- Table to display rental names, categories, and remove buttons -->
                 <table class="table mt-4">
                     <thead>
                     <tr>
                         <th>Rental Name</th>
                         <th>Category</th>
+                        <th>Action</th> <!-- New column for remove button -->
                     </tr>
                     </thead>
                     <tbody>
@@ -25,6 +26,13 @@
                         <tr>
                             <td>{{ $category->rent_name }}</td>
                             <td>{{ $category->name }}</td>
+                            <td>
+                                <form action="{{ route('category.destroy', $category->id) }}" method="POST">
+                                    @csrf
+                                    @method('POST')
+                                    <button type="submit" class="btn btn-danger">Remove</button>
+                                </form>
+                            </td>
                         </tr>
                     @endforeach
                     </tbody>
@@ -60,8 +68,4 @@
             </div>
         </div>
     </div>
-
-
-
-
 </x-app-layout>

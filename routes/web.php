@@ -46,6 +46,7 @@ Route::delete('/manager/rental/delete/{id}', [ManagerController::class, 'delete'
 Route::get('/manager/rental/generate-report', [ManagerController::class, 'generatePDF'])->name('rental.report');
 Route::get('/manager/manage/category', [ManagerController::class, 'category'])->name('category.manage');
 Route::post('/manager/manage/category/store', [ManagerController::class, 'categoryStore'])->name('category.store');
+Route::post('/manager/manage/category/destroy/{id}', [ManagerController::class, 'categoryDelete'])->name('category.destroy');
 Route::put('/manager/{user}/toggle-status', [ManagerController::class, 'toggleStatus'])->name('owner.status');
 Route::post('/manager/owner-update/{id}', [ManagerController::class, 'update'])->name('owners.update');
 Route::get('/manager/manage-stat', [ManagerController::class, 'statistical'])->name('stat.manage');

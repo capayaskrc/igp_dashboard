@@ -254,6 +254,17 @@ class ManagerController extends Controller
         return redirect()->back()->with('success', 'Category added successfully.');
     }
 
+    public function categoryDelete($id)
+    {
+        try {
+            $category = Category::findOrFail($id);
+            $category->delete();
+            return redirect()->back()->with('success', 'Category removed successfully.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Failed to remove category.');
+        }
+    }
+
     public function delete($id): JsonResponse
     {
         $rental = Rental::findOrFail($id);
